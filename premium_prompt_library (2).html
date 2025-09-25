@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Prompt Library Pro - Premium Edition</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .netflix-card {
+            background: linear-gradient(145deg, #1f2937, #374151);
+            border: 1px solid #4b5563;
+        }
+        .admin-panel {
+            background: linear-gradient(145deg, #111827, #1f2937);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #1f2937;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .stats-card {
+            background: linear-gradient(145deg, #1e3a8a, #3b82f6);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center gradient-bg">
+        <div class="bg-gray-800 p-8 rounded-lg shadow-2xl w-full max-w-md">
+            <div class="text-center mb-8">
+                <i class="fas fa-robot text-6xl text-blue-400 mb-4"></i>
+                <h1 class="text-3xl font-bold mb-2">AI Prompt Library Pro</h1>
+                <p class="text-gray-300">プレミアム版アクセス</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">アクセスコード</label>
+                    <input type="password" id="passwordInput" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="パスワードを入力">
+                </div>
+                <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200">
+                    <i class="fas fa-sign-in-alt mr-2"></i>ログイン
+                </button>
+                <div id="loginError" class="text-red-400 text-sm text-center hidden">パスワードが正しくありません</div>
+                <div class="text-center text-sm text-gray-400">
+                    デモパスワード: <code class="bg-gray-700 px-2 py-1 rounded text-blue-300">admin123</code>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="mainApp" class="hidden">
+        <!-- Navigation -->
+        <nav class="bg-gray-800 shadow-lg">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-between items-center py-4">
+                    <div class="flex items-center space-x-4">
+                        <i class="fas fa-robot text-2xl text-blue-400"></i>
+                        <h1 class="text-xl font-bold">AI Prompt Library Pro</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <select id="viewMode" onchange="changeView()" class="bg-gray-700 border border-gray-600 rounded-md px-3 py-1">
+                            <option value="library">ライブラリ</option>
+                            <option value="admin">管理画面</option>
+                        </select>
+                        <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-md transition duration-200">
+                            <i class="fas fa-sign-out-alt mr-2"></i>ログアウト
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Library View -->
+        <div id="libraryView" class="container mx-auto px-4 py-8">
+            <!-- Search and Filter Bar -->
+            <div class="mb-8 bg-gray-800 rounded-lg p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">検索</label>
+                        <input type="text" id="searchInput" placeholder="プロンプトを検索..." class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" oninput="filterPrompts()">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">カテゴリ</label>
+                        <select id="categoryFilter" onchange="filterPrompts()" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">全てのカテゴリ</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">並び順</label>
+                        <select id="sortOrder" onchange="filterPrompts()" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="name">名前順</option>
+                            <option value="category">カテゴリ順</option>
+                            <option value="date">作成日順</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prompts Grid -->
+            <div id="promptsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Prompts will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Admin View -->
+        <div id="adminView" class="hidden container mx-auto px-4 py-8">
+            <!-- Dashboard Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="stats-card rounded-lg p-6 text-center">
+                    <i class="fas fa-file-alt text-3xl mb-2"></i>
+                    <div class="text-2xl font-bold" id="totalPrompts">0</div>
+                    <div class="text-sm">総プロンプト数</div>
+                </div>
+                <div class="bg-green-600 rounded-lg p-6 text-center">
+                    <i class="fas fa-tags text-3xl mb-2"></i>
+                    <div class="text-2xl font-bold" id="totalCategories">0</div>
+                    <div class="text-sm">カテゴリ数</div>
+                </div>
+                <div class="bg-purple-600 rounded-lg p-6 text-center">
+                    <i class="fas fa-eye text-3xl mb-2"></i>
+                    <div class="text-2xl font-bold" id="totalViews">247</div>
+                    <div class="text-sm">総閲覧数</div>
+                </div>
+                <div class="bg-orange-600 rounded-lg p-6 text-center">
+                    <i class="fas fa-calendar text-3xl mb-2"></i>
+                    <div class="text-2xl font-bold" id="lastUpdate">今日</div>
+                    <div class="text-sm">最終更新</div>
+                </div>
+            </div>
+
+            <!-- Admin Controls -->
+            <div class="bg-gray-800 rounded-lg p-6 mb-8">
+                <div class="flex flex-wrap gap-4">
+                    <button onclick="openPromptModal()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition duration-200">
+                        <i class="fas fa-plus mr-2"></i>新規プロンプト追加
+                    </button>
+                    <button onclick="openCategoryModal()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md transition duration-200">
+                        <i class="fas fa-folder-plus mr-2"></i>カテゴリ管理
+                    </button>
+                    <button onclick="exportData()" class="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-md transition duration-200">
+                        <i class="fas fa-download mr-2"></i>データエクスポート
+                    </button>
+                    <button onclick="importData()" class="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-md transition duration-200">
+                        <i class="fas fa-upload mr-2"></i>データインポート
+                    </button>
+                </div>
+            </div>
+
+            <!-- Analytics Chart -->
+            <div class="bg-gray-800 rounded-lg p-6 mb-8">
+                <h3 class="text-xl font-bold mb-4">カテゴリ別プロンプト分布</h3>
+                <div style="height: 400px;">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Prompts Management Table -->
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h3 class="text-xl font-bold mb-4">プロンプト管理</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full table-auto">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="text-left py-2">名前</th>
+                                <th class="text-left py-2">カテゴリ</th>
+                                <th class="text-left py-2">作成日</th>
+                                <th class="text-left py-2">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="promptsTable">
+                            <!-- Table rows will be rendered here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prompt Detail Modal -->
+    <div id="promptModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold" id="modalTitle">プロンプト詳細</h2>
+                <button onclick="closeModal('promptModal')" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="modalContent">
+                <!-- Modal content will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Prompt Edit Modal -->
+    <div id="editPromptModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">プロンプト編集</h2>
+                <button onclick="closeModal('editPromptModal')" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="promptForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">プロンプト名</label>
+                    <input type="text" id="promptName" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">カテゴリ</label>
+                    <select id="promptCategory" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">使用用途</label>
+                    <textarea id="promptDescription" rows="3" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">プロンプト内容</label>
+                    <textarea id="promptContent" rows="6" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">タグ（カンマ区切り）</label>
+                    <input type="text" id="promptTags" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="例: AI, ビジネス, 創作">
+                </div>
+                <div class="flex gap-4">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition duration-200">
+                        <i class="fas fa-save mr-2"></i>保存
+                    </button>
+                    <button type="button" onclick="closeModal('editPromptModal')" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-md transition duration-200">
+                        キャンセル
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Category Management Modal -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">カテゴリ管理</h2>
+                <button onclick="closeModal('categoryModal')" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div class="flex gap-2">
+                    <input type="text" id="newCategoryName" placeholder="新しいカテゴリ名" class="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="addCategory()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md transition duration-200">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div id="categoriesList" class="space-y-2">
+                    <!-- Categories will be listed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global Variables
+        let currentUser = null;
+        let prompts = [];
+        let categories = [];
+        let currentView = 'library';
+        let editingPromptId = null;
+
+        // Initial Data
+        const initialPrompts = [
+            {
+                id: 1,
+                name: "ビジネス戦略立案",
+                category: "ビジネス",
+                description: "包括的なビジネス戦略を立案するためのプロンプト",
+                content: "あなたは経験豊富な経営コンサルタントです。[業界]の[企業規模]企業に対して、今後3年間の成長戦略を立案してください。市場分析、競合分析、SWOT分析を含め、具体的なアクションプランも提示してください。",
+                tags: ["戦略", "ビジネス", "分析"],
+                createdAt: "2024-01-15"
+            },
+            {
+                id: 2,
+                name: "創作小説執筆",
+                category: "クリエイティブ",
+                description: "魅力的な小説の導入部分を執筆するプロンプト",
+                content: "あなたは人気小説家です。ジャンル[ジャンル]で、主人公が[設定]という状況の小説の第1章を書いてください。読者を引き込む魅力的な導入部分を心がけ、キャラクターの個性と世界観を効果的に表現してください。",
+                tags: ["小説", "創作", "ストーリー"],
+                createdAt: "2024-01-16"
+            },
+            {
+                id: 3,
+                name: "技術文書作成",
+                category: "技術",
+                description: "分かりやすい技術文書を作成するプロンプト",
+                content: "あなたは技術ライターです。[技術名/システム名]について、初心者にも理解できる技術文書を作成してください。概要、仕組み、使用方法、注意点を含め、図表の使用箇所も示してください。",
+                tags: ["技術", "文書", "説明"],
+                createdAt: "2024-01-17"
+            },
+            {
+                id: 4,
+                name: "マーケティング企画",
+                category: "マーケティング",
+                description: "効果的なマーケティング企画を立案するプロンプト",
+                content: "あなたはマーケティングの専門家です。[商品/サービス名]のターゲット層[ターゲット]に向けた3ヶ月間のマーケティング企画を立案してください。予算、チャネル、KPI、タイムラインを含む詳細な企画書を作成してください。",
+                tags: ["マーケティング", "企画", "戦略"],
+                createdAt: "2024-01-18"
+            },
+            {
+                id: 5,
+                name: "教育コンテンツ設計",
+                category: "教育",
+                description: "効果的な教育コンテンツを設計するプロンプト",
+                content: "あなたは教育設計の専門家です。[学習テーマ]について、[対象者]向けの教育コンテンツを設計してください。学習目標、コンテンツ構成、評価方法、実施スケジュールを含む包括的な設計書を作成してください。",
+                tags: ["教育", "学習", "設計"],
+                createdAt: "2024-01-19"
+            },
+            {
+                id: 6,
+                name: "データ分析レポート",
+                category: "分析",
+                description: "データ分析結果を分かりやすくレポートするプロンプト",
+                content: "あなたはデータアナリストです。提供されたデータ[データの種類]を分析し、ビジネスに役立つインサイトを含むレポートを作成してください。データの傾向、パターン、推奨アクションを含め、経営陣にも理解しやすい形式で報告してください。",
+                tags: ["データ", "分析", "レポート"],
+                createdAt: "2024-01-20"
+            }
+        ];
+
+        const initialCategories = ["ビジネス", "クリエイティブ", "技術", "マーケティング", "教育", "分析"];
+
+        // Authentication Functions
+        function login() {
+            const password = document.getElementById('passwordInput').value;
+            const correctPassword = 'admin123';
+
+            if (password === correctPassword) {
+                currentUser = 'admin';
+                sessionStorage.setItem('promptLibraryAuth', 'true');
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('loginError').classList.add('hidden');
+                initializeApp();
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+                document.getElementById('passwordInput').value = '';
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            sessionStorage.removeItem('promptLibraryAuth');
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('mainApp').classList.add('hidden');
+            document.getElementById('passwordInput').value = '';
+        }
+
+        // Initialize Application
+        function initializeApp() {
+            loadData();
+            renderPrompts();
+            updateStats();
+            renderCategoryFilter();
+            renderCategoryChart();
+        }
+
+        // Data Management
+        function loadData() {
+            const savedPrompts = localStorage.getItem('promptLibraryPrompts');
+            const savedCategories = localStorage.getItem('promptLibraryCategories');
+
+            if (savedPrompts) {
+                prompts = JSON.parse(savedPrompts);
+            } else {
+                prompts = [...initialPrompts];
+                saveData();
+            }
+
+            if (savedCategories) {
+                categories = JSON.parse(savedCategories);
+            } else {
+                categories = [...initialCategories];
+                saveData();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('promptLibraryPrompts', JSON.stringify(prompts));
+            localStorage.setItem('promptLibraryCategories', JSON.stringify(categories));
+        }
+
+        // View Management
+        function changeView() {
+            const viewMode = document.getElementById('viewMode').value;
+            currentView = viewMode;
+
+            if (viewMode === 'admin') {
+                document.getElementById('libraryView').classList.add('hidden');
+                document.getElementById('adminView').classList.remove('hidden');
+                renderPromptsTable();
+                updateStats();
+                renderCategoryChart();
+            } else {
+                document.getElementById('libraryView').classList.remove('hidden');
+                document.getElementById('adminView').classList.add('hidden');
+                renderPrompts();
+            }
+        }
+
+        // Prompt Rendering
+        function renderPrompts() {
+            const grid = document.getElementById('promptsGrid');
+            const filteredPrompts = getFilteredPrompts();
+
+            grid.innerHTML = filteredPrompts.map(prompt => `
+                <div class="netflix-card rounded-lg p-6 card-hover fade-in cursor-pointer" onclick="showPromptDetail(${prompt.id})">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="bg-blue-600 text-xs px-2 py-1 rounded-full">${prompt.category}</span>
+                        <i class="fas fa-bookmark text-gray-400"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">${prompt.name}</h3>
+                    <p class="text-gray-300 text-sm mb-4 line-clamp-3">${prompt.description}</p>
+                    <div class="flex flex-wrap gap-1 mb-4">
+                        ${prompt.tags.map(tag => `<span class="bg-gray-700 text-xs px-2 py-1 rounded">${tag}</span>`).join('')}
+                    </div>
+                    <div class="flex items-center justify-between text-sm text-gray-400">
+                        <span><i class="fas fa-calendar mr-1"></i>${prompt.createdAt}</span>
+                        <span><i class="fas fa-arrow-right"></i></span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getFilteredPrompts() {
+            let filtered = [...prompts];
+            
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const sortOrder = document.getElementById('sortOrder').value;
+
+            if (searchTerm) {
+                filtered = filtered.filter(prompt => 
+                    prompt.name.toLowerCase().includes(searchTerm) ||
+                    prompt.description.toLowerCase().includes(searchTerm) ||
+                    prompt.content.toLowerCase().includes(searchTerm) ||
+                    prompt.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            if (categoryFilter) {
+                filtered = filtered.filter(prompt => prompt.category === categoryFilter);
+            }
+
+            filtered.sort((a, b) => {
+                switch(sortOrder) {
+                    case 'name': return a.name.localeCompare(b.name);
+                    case 'category': return a.category.localeCompare(b.category);
+                    case 'date': return new Date(b.createdAt) - new Date(a.createdAt);
+                    default: return 0;
+                }
+            });
+
+            return filtered;
+        }
+
+        function filterPrompts() {
+            renderPrompts();
+        }
+
+        function renderCategoryFilter() {
+            const categoryFilter = document.getElementById('categoryFilter');
+            categoryFilter.innerHTML = '<option value="">全てのカテゴリ</option>' +
+                categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        }
+
+        // Modal Functions
+        function showPromptDetail(promptId) {
+            const prompt = prompts.find(p => p.id === promptId);
+            if (!prompt) return;
+
+            document.getElementById('modalTitle').textContent = prompt.name;
+            document.getElementById('modalContent').innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <span class="bg-blue-600 text-xs px-2 py-1 rounded-full">${prompt.category}</span>
+                    </div>
+                    <div>
+                        <h4 class="font-bold mb-2">使用用途</h4>
+                        <p class="text-gray-300">${prompt.description}</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold mb-2">プロンプト内容</h4>
+                        <div class="bg-gray-700 p-4 rounded-md">
+                            <pre class="whitespace-pre-wrap text-sm">${prompt.content}</pre>
+                        </div>
+                        <button onclick="copyToClipboard('${prompt.content.replace(/'/g, "\\'")}'); showCopySuccess()" class="mt-2 bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-sm transition duration-200">
+                            <i class="fas fa-copy mr-1"></i>コピー
+                        </button>
+                        <span id="copySuccess" class="ml-2 text-green-400 text-sm hidden">コピーしました！</span>
+                    </div>
+                    <div>
+                        <h4 class="font-bold mb-2">タグ</h4>
+                        <div class="flex flex-wrap gap-1">
+                            ${prompt.tags.map(tag => `<span class="bg-gray-700 text-xs px-2 py-1 rounded">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-400">
+                        作成日: ${prompt.createdAt}
+                    </div>
+                </div>
+            `;
+            document.getElementById('promptModal').style.display = 'block';
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+        }
+
+        function showCopySuccess() {
+            const success = document.getElementById('copySuccess');
+            success.classList.remove('hidden');
+            setTimeout(() => success.classList.add('hidden'), 2000);
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Admin Functions
+        function renderPromptsTable() {
+            const tbody = document.getElementById('promptsTable');
+            tbody.innerHTML = prompts.map(prompt => `
+                <tr class="border-b border-gray-700">
+                    <td class="py-2">${prompt.name}</td>
+                    <td class="py-2">${prompt.category}</td>
+                    <td class="py-2">${prompt.createdAt}</td>
+                    <td class="py-2">
+                        <button onclick="editPrompt(${prompt.id})" class="bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-sm mr-2">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deletePrompt(${prompt.id})" class="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-sm">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function updateStats() {
+            document.getElementById('totalPrompts').textContent = prompts.length;
+            document.getElementById('totalCategories').textContent = categories.length;
+        }
+
+        function renderCategoryChart() {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            const categoryData = categories.map(cat => ({
+                category: cat,
+                count: prompts.filter(p => p.category === cat).length
+            }));
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: categoryData.map(d => d.category),
+                    datasets: [{
+                        data: categoryData.map(d => d.count),
+                        backgroundColor: [
+                            '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#ffffff' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function openPromptModal() {
+            editingPromptId = null;
+            document.getElementById('promptForm').reset();
+            populateCategoryOptions();
+            document.getElementById('editPromptModal').style.display = 'block';
+        }
+
+        function editPrompt(id) {
+            const prompt = prompts.find(p => p.id === id);
+            if (!prompt) return;
+
+            editingPromptId = id;
+            document.getElementById('promptName').value = prompt.name;
+            document.getElementById('promptCategory').value = prompt.category;
+            document.getElementById('promptDescription').value = prompt.description;
+            document.getElementById('promptContent').value = prompt.content;
+            document.getElementById('promptTags').value = prompt.tags.join(', ');
+            populateCategoryOptions();
+            document.getElementById('editPromptModal').style.display = 'block';
+        }
+
+        function deletePrompt(id) {
+            if (confirm('このプロンプトを削除しますか？')) {
+                prompts = prompts.filter(p => p.id !== id);
+                saveData();
+                renderPromptsTable();
+                updateStats();
+                renderCategoryChart();
+            }
+        }
+
+        function populateCategoryOptions() {
+            const select = document.getElementById('promptCategory');
+            select.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        }
+
+        document.getElementById('promptForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('promptName').value,
+                category: document.getElementById('promptCategory').value,
+                description: document.getElementById('promptDescription').value,
+                content: document.getElementById('promptContent').value,
+                tags: document.getElementById('promptTags').value.split(',').map(tag => tag.trim()).filter(tag => tag)
+            };
+
+            if (editingPromptId) {
+                const index = prompts.findIndex(p => p.id === editingPromptId);
+                prompts[index] = { ...prompts[index], ...formData };
+            } else {
+                const newId = Math.max(...prompts.map(p => p.id), 0) + 1;
+                prompts.push({
+                    id: newId,
+                    ...formData,
+                    createdAt: new Date().toISOString().split('T')[0]
+                });
+            }
+
+            saveData();
+            closeModal('editPromptModal');
+            renderPromptsTable();
+            updateStats();
+            renderCategoryChart();
+            renderPrompts();
+        });
+
+        // Category Management
+        function openCategoryModal() {
+            renderCategoriesList();
+            document.getElementById('categoryModal').style.display = 'block';
+        }
+
+        function renderCategoriesList() {
+            const list = document.getElementById('categoriesList');
+            list.innerHTML = categories.map(cat => `
+                <div class="flex items-center justify-between bg-gray-700 px-3 py-2 rounded">
+                    <span>${cat}</span>
+                    <button onclick="deleteCategory('${cat}')" class="text-red-400 hover:text-red-300">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addCategory() {
+            const newCategoryName = document.getElementById('newCategoryName').value.trim();
+            if (newCategoryName && !categories.includes(newCategoryName)) {
+                categories.push(newCategoryName);
+                saveData();
+                renderCategoriesList();
+                renderCategoryFilter();
+                populateCategoryOptions();
+                document.getElementById('newCategoryName').value = '';
+            }
+        }
+
+        function deleteCategory(categoryName) {
+            if (confirm(`カテゴリ「${categoryName}」を削除しますか？`)) {
+                categories = categories.filter(cat => cat !== categoryName);
+                saveData();
+                renderCategoriesList();
+                renderCategoryFilter();
+                updateStats();
+                renderCategoryChart();
+            }
+        }
+
+        // Data Export/Import
+        function exportData() {
+            const data = {
+                prompts: prompts,
+                categories: categories,
+                exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `prompt-library-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            if (data.prompts && data.categories) {
+                                prompts = data.prompts;
+                                categories = data.categories;
+                                saveData();
+                                alert('データのインポートが完了しました！');
+                                initializeApp();
+                            } else {
+                                alert('無効なファイル形式です。');
+                            }
+                        } catch (error) {
+                            alert('ファイルの読み込みに失敗しました。');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        // Event Listeners
+        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+
+        document.getElementById('newCategoryName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addCategory();
+            }
+        });
+
+        // Click outside modal to close
+        window.addEventListener('click', function(e) {
+            const modals = ['promptModal', 'editPromptModal', 'categoryModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (e.target === modal) {
+                    closeModal(modalId);
+                }
+            });
+        });
+
+        // Check if user is already logged in
+        window.addEventListener('load', function() {
+            if (sessionStorage.getItem('promptLibraryAuth') === 'true') {
+                currentUser = 'admin';
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                initializeApp();
+            }
+        });
+    </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"rayId":"9848fa2f592483c0","serverTiming":{"name":{"cfExtPri":true,"cfEdge":true,"cfOrigin":true,"cfL4":true,"cfSpeedBrain":true,"cfCacheStatus":true}},"version":"2025.9.1","token":"4edd5f8ec12a48cfa682ab8261b80a79"}' crossorigin="anonymous"></script>
+</body>
+</html>
+    <script id="html_badge_script1">
+        window.__genspark_remove_badge_link = "https://www.genspark.ai/api/html_badge/" +
+            "remove_badge?token=To%2FBnjzloZ3UfQdcSaYfDis6Q0Nt6cxin9kwr8jwVC4MLi6M%2BPjDTcHW4eq2tfhKEvhLVemjbHCnYQbus99p2iIgU%2BOCz2cSq4d4w5Vn1gYGKkGGPqSp%2Bwyuoh3ZkqrzsoYJC%2BlVratQ3iM5XKIN5s9o7MUgpC0Dx2Oh6A5jQcQ6H%2BQlp9Tae7PjkCbh3sUKE%2FKXl3s4PLRIbBFkbsmF0BJKjlsopXKup48gxSWAYvXOiYUpSJE2ZGE8o5ztKWi0RmcBmowih6UBxbS%2FGG0xDaDa%2FXy%2Bw%2BmjnLQhPwnMCrc%2F3RBg5x4CdenBTxe0SpIsW1deQPr4NlMs6jZWHwQxBUMfjyG8wC%2FmluBfwfF1LC2%2F0h4iiZ32%2BdHhplp58nIox4Et%2Fym5041Te3egSWqUxLgfEwc76BjoZIZUiCtXtsbRUp3zXyS4zNfGvgT9OJMPhNtV8wZ7HzBq7zLIKt1hEfwSS%2BNCZHfTv2cdLdRSM9DeLnbLvlEY5F4VMgdhKMmUFZhESE%2FZ1hEJ4rKsrWB7XImcTH2X%2BdiW1wtjcFhrsgM%3D";
+        window.__genspark_locale = "ja-JP";
+        window.__genspark_token = "To/BnjzloZ3UfQdcSaYfDis6Q0Nt6cxin9kwr8jwVC4MLi6M+PjDTcHW4eq2tfhKEvhLVemjbHCnYQbus99p2iIgU+OCz2cSq4d4w5Vn1gYGKkGGPqSp+wyuoh3ZkqrzsoYJC+lVratQ3iM5XKIN5s9o7MUgpC0Dx2Oh6A5jQcQ6H+Qlp9Tae7PjkCbh3sUKE/KXl3s4PLRIbBFkbsmF0BJKjlsopXKup48gxSWAYvXOiYUpSJE2ZGE8o5ztKWi0RmcBmowih6UBxbS/GG0xDaDa/Xy+w+mjnLQhPwnMCrc/3RBg5x4CdenBTxe0SpIsW1deQPr4NlMs6jZWHwQxBUMfjyG8wC/mluBfwfF1LC2/0h4iiZ32+dHhplp58nIox4Et/ym5041Te3egSWqUxLgfEwc76BjoZIZUiCtXtsbRUp3zXyS4zNfGvgT9OJMPhNtV8wZ7HzBq7zLIKt1hEfwSS+NCZHfTv2cdLdRSM9DeLnbLvlEY5F4VMgdhKMmUFZhESE/Z1hEJ4rKsrWB7XImcTH2X+diW1wtjcFhrsgM=";
+    </script>
+    
+    <script id="html_notice_dialog_script" src="https://www.genspark.ai/notice_dialog.js"></script>
+    
